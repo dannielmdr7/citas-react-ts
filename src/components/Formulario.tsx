@@ -1,15 +1,34 @@
-import { FormEventHandler, useState } from 'react';
-export const Formulario = () => {
+import { Dispatch, FormEventHandler, SetStateAction, useEffect, useState } from 'react';
+import { PacienteInterface } from '../interfaces';
+import { Error } from './Error';
+
+interface Props {
+  setPacientes: Dispatch<SetStateAction<PacienteInterface[]>>
+  setPaciente: Dispatch<SetStateAction<PacienteInterface>>
+  pacientes: PacienteInterface[];
+  paciente: PacienteInterface;
+
+}
+
+export const Formulario = ({ setPacientes, setPaciente, pacientes, paciente }: Props) => {
   const [nombre, setNombre] = useState('');
   const [propietario, setPropietario] = useState('');
   const [email, setEmail] = useState('');
   const [fecha, setFecha] = useState('');
   const [sintomas, setSintomas] = useState('')
 
+  useEffect(() => {
+    if (paciente.id !== "") {
+      setNombre(paciente.nombre);
+      setPropietario(paciente.propietario);
+      setEmail(paciente.email);
+      setFecha(paciente.fecha);
+      setSintomas(paciente.sintomas);
+    }
+  }, [paciente])
+
   // Validación de errores en formulario
   const [error, setError] = useState(false)
-
-
   const handelSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault()
     // validación del formulario
@@ -17,7 +36,32 @@ export const Formulario = () => {
       setError(true);
       return
     }
-    setError(false)
+    setError(false);
+    const newPaciente: PacienteInterface = {
+      nombre,
+      propietario,
+      email,
+      fecha,
+      sintomas,
+      id: ''
+    }
+    if (paciente.id) {
+      newPaciente.id = paciente.id;
+      const pacientesActualizados = pacientes.map((pacienteState) => pacienteState.id === paciente.id ? newPaciente : pacienteState);
+      setPacientes(pacientesActualizados);
+      setPaciente({ email: '', fecha: '', id: '', nombre: '', propietario: '', sintomas: '' });
+
+    } else {
+      newPaciente.id = Math.random().toString(36);
+      setPacientes([...pacientes, newPaciente]);
+    }
+
+    // Reiniciar el formulario
+    setNombre('');
+    setPropietario('');
+    setEmail('');
+    setFecha('');
+    setSintomas('');
   }
   return (
     <div className="col-span-6 lg:col-span-4">
@@ -28,10 +72,7 @@ export const Formulario = () => {
         </span>
       </p>
       <form className="bg-white shadow-md rounded-lg px-2 py-4 mt-4" onSubmit={handelSubmit} >
-        {error &&
-          <div className=" bg-red-800 text-white text-center px-2 py-4 uppercase font-bold mb-2 rounded-md " >
-            <p  > Hay un campo vacio en el formulario </p>
-          </div>}
+        {error && <Error mensaje='Hay un campo vacio en el formulario' />}
         <div className="mb-2" >
           <label htmlFor="mascota" className="block text-gray-700 uppercase font-bold ">
             Nombre Mascota
@@ -97,7 +138,7 @@ export const Formulario = () => {
         </div>
         <input
           type="submit"
-          value="Agregar Paciente"
+          value={paciente.id ? 'Guardar Cambios' : 'Agregar Paciente'}
           className="bg-indigo-600 hover:bg-indigo-700 transition-all cursor-pointer w-full p-3 text-white font-bold text-center" />
       </form>
     </div>
